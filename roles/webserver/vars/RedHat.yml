@@ -1,0 +1,7 @@
+---
+# RedHat/CentOS specific variables for webserver role
+
+web_server_package: httpd
+web_server_service: httpd
+web_server_user: apache
+web_server_group: apache

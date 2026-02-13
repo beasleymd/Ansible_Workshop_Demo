@@ -1,0 +1,45 @@
+---
+# Web server role - Main tasks file
+
+- name: Include OS-specific variables
+  include_vars: "{{ ansible_os_family }}.yml"
+
+- name: Install web server package
+  package:
+    name: "{{ web_server_package }}"
+    state: present
+
+- name: Start and enable web server service
+  service:
+    name: "{{ web_server_service }}"
+    state: started
+    enabled: yes
+
+- name: Create document root
+  file:
+    path: "{{ document_root }}"
+    state: directory
+    owner: "{{ web_server_user }}"
+    group: "{{ web_server_group }}"
+    mode: '0755'
+
+- name: Deploy index.html from template
+  template:
+    src: index.html.j2
+    dest: "{{ document_root }}/index.html"
+    owner: "{{ web_server_user }}"
+    group: "{{ web_server_group }}"
+    mode: '0644'
+  notify: restart web server
+
+- name: Configure firewall (RedHat/CentOS)
+  firewalld:
+    service: "{{ item }}"
+    permanent: yes
+    state: enabled
+    immediate: yes
+  loop:
+    - http
+    - https
+  when: ansible_os_family == "RedHat"
+  ignore_errors: yes

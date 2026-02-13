@@ -1,0 +1,19 @@
+---
+# Global variables for all hosts
+
+# Package management
+package_state: present
+
+# Timezone
+timezone: UTC
+
+# Common packages to install
+common_packages:
+  - vim
+  - git
+  - htop
+  - curl
+  - wget
+
+# Enable automatic security updates
+auto_updates: true

@@ -1,0 +1,27 @@
+# Ansible Workshop Demo Inventory
+# This file defines the hosts and groups for the workshop
+
+[all:vars]
+ansible_user=ansible
+ansible_python_interpreter=/usr/bin/python3
+
+[webservers]
+# Add your web server hosts here
+# Example:
+# web1.example.com
+# web2.example.com
+
+[databases]
+# Add your database server hosts here
+# Example:
+# db1.example.com
+
+[loadbalancers]
+# Add your load balancer hosts here
+# Example:
+# lb1.example.com
+
+[workshop:children]
+webservers
+databases
+loadbalancers

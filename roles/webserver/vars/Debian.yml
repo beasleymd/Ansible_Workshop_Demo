@@ -1,0 +1,7 @@
+---
+# Debian/Ubuntu specific variables for webserver role
+
+web_server_package: apache2
+web_server_service: apache2
+web_server_user: www-data
+web_server_group: www-data

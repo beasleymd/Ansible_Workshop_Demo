@@ -1,0 +1,94 @@
+---
+# Web server configuration playbook
+# Deploys and configures a basic web server
+
+- name: Configure web servers
+  hosts: webservers
+  become: true
+  gather_facts: true
+
+  vars:
+    http_port: 80
+    https_port: 443
+    document_root: /var/www/html
+
+  tasks:
+    - name: Install Apache web server (Debian/Ubuntu)
+      apt:
+        name: apache2
+        state: present
+      when: ansible_os_family == "Debian"
+
+    - name: Install Apache web server (RedHat/CentOS)
+      yum:
+        name: httpd
+        state: present
+      when: ansible_os_family == "RedHat"
+
+    - name: Start and enable Apache service (Debian/Ubuntu)
+      service:
+        name: apache2
+        state: started
+        enabled: yes
+      when: ansible_os_family == "Debian"
+
+    - name: Start and enable Apache service (RedHat/CentOS)
+      service:
+        name: httpd
+        state: started
+        enabled: yes
+      when: ansible_os_family == "RedHat"
+
+    - name: Create custom index.html
+      copy:
+        content: |
+          <!DOCTYPE html>
+          <html>
+          <head>
+              <title>Ansible Workshop Demo</title>
+          </head>
+          <body>
+              <h1>Welcome to the Ansible Workshop!</h1>
+              <p>This web server was configured using Ansible.</p>
+              <p>Hostname: {{ ansible_hostname }}</p>
+              <p>IP Address: {{ ansible_default_ipv4.address | default('N/A') }}</p>
+          </body>
+          </html>
+        dest: "{{ document_root }}/index.html"
+        owner: www-data
+        group: www-data
+        mode: '0644'
+      when: ansible_os_family == "Debian"
+
+    - name: Create custom index.html (RedHat/CentOS)
+      copy:
+        content: |
+          <!DOCTYPE html>
+          <html>
+          <head>
+              <title>Ansible Workshop Demo</title>
+          </head>
+          <body>
+              <h1>Welcome to the Ansible Workshop!</h1>
+              <p>This web server was configured using Ansible.</p>
+              <p>Hostname: {{ ansible_hostname }}</p>
+              <p>IP Address: {{ ansible_default_ipv4.address | default('N/A') }}</p>
+          </body>
+          </html>
+        dest: "{{ document_root }}/index.html"
+        owner: apache
+        group: apache
+        mode: '0644'
+      when: ansible_os_family == "RedHat"
+
+    - name: Configure firewall for HTTP (RedHat/CentOS)
+      firewalld:
+        service: "{{ item }}"
+        permanent: yes
+        state: enabled
+        immediate: yes
+      loop:
+        - http
+        - https
+      when: ansible_os_family == "RedHat"
+      ignore_errors: yes

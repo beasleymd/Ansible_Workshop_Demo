@@ -1,0 +1,5 @@
+# Python Requirements for Ansible Workshop
+ansible>=2.9,<3.0
+ansible-lint>=5.0
+jinja2>=2.11
+PyYAML>=5.3
