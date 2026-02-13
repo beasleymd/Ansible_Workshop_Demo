@@ -32,6 +32,13 @@
     mode: '0644'
   notify: restart web server
 
+- name: Check if firewalld is available
+  command: systemctl is-active firewalld
+  register: firewalld_status
+  failed_when: false
+  changed_when: false
+  when: ansible_os_family == "RedHat"
+
 - name: Configure firewall (RedHat/CentOS)
   firewalld:
     service: "{{ item }}"
@@ -41,5 +48,6 @@
   loop:
     - http
     - https
-  when: ansible_os_family == "RedHat"
-  ignore_errors: yes
+  when: 
+    - ansible_os_family == "RedHat"
+    - firewalld_status.rc == 0

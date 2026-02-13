@@ -3,7 +3,7 @@
 
 - name: Include OS-specific variables
   include_vars: "{{ ansible_os_family }}.yml"
-  ignore_errors: yes
+  when: ansible_os_family in ['Debian', 'RedHat']
 
 - name: Update package cache
   package:
@@ -26,5 +26,6 @@
     name: "{{ ntp_service }}"
     state: started
     enabled: yes
-  when: ntp_service is defined
-  ignore_errors: yes
+  when: 
+    - ntp_service is defined
+    - ntp_enabled | default(false)

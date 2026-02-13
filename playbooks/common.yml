@@ -43,7 +43,6 @@
         comment: "Ansible Automation User"
         shell: /bin/bash
         create_home: yes
-      when: ansible_user == "ansible"
 
     - name: Check if SSH public key exists
       stat:
@@ -65,4 +64,3 @@
         line: 'ansible ALL=(ALL) NOPASSWD: ALL'
         create: yes
         validate: 'visudo -cf %s'
-      when: ansible_user == "ansible"
