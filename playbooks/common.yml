@@ -7,6 +7,9 @@
   become: true
   gather_facts: true
 
+  vars:
+    ssh_key_path: "~/.ssh/id_rsa.pub"
+
   tasks:
     - name: Update package cache (Debian/Ubuntu)
       apt:
@@ -46,7 +49,7 @@
 
     - name: Check if SSH public key exists
       stat:
-        path: "{{ lookup('env', 'HOME') }}/.ssh/id_rsa.pub"
+        path: "{{ ssh_key_path | expanduser }}"
       register: ssh_key_file
       delegate_to: localhost
       become: false
@@ -55,7 +58,7 @@
       authorized_key:
         user: ansible
         state: present
-        key: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
+        key: "{{ lookup('file', ssh_key_path) }}"
       when: ssh_key_file.stat.exists
 
     - name: Configure sudo for ansible user
