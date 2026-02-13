@@ -7,6 +7,17 @@
   gather_facts: no
   
   tasks:
+
+ - name: Set report timestamp on controller
+      delegate_to: localhost
+      run_once: true
+      set_fact:
+        facts_report_ts: "{{ lookup('pipe', 'date -u +%Y-%m-%dT%H:%M:%SZ') }}"
+
+    - name: Propagate report timestamp
+      set_fact:
+        facts_report_ts: "{{ hostvars['localhost'].facts_report_ts }}"
+  
     - name: Gather router facts
       cisco.ios.ios_facts:
         gather_subset:
