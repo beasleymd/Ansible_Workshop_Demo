@@ -45,12 +45,19 @@
         create_home: yes
       when: ansible_user == "ansible"
 
+    - name: Check if SSH public key exists
+      stat:
+        path: "{{ lookup('env', 'HOME') }}/.ssh/id_rsa.pub"
+      register: ssh_key_file
+      delegate_to: localhost
+      become: false
+
     - name: Add SSH key for ansible user
       authorized_key:
         user: ansible
         state: present
         key: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
-      ignore_errors: yes
+      when: ssh_key_file.stat.exists
 
     - name: Configure sudo for ansible user
       lineinfile:

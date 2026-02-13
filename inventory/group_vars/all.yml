@@ -14,6 +14,8 @@ common_packages:
   - htop
   - curl
   - wget
+  - net-tools
+  - tree
 
 # Enable automatic security updates
 auto_updates: true

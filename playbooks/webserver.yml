@@ -39,6 +39,11 @@
         enabled: yes
       when: ansible_os_family == "RedHat"
 
+    - name: Set web server user/group based on OS
+      set_fact:
+        web_user: "{{ 'www-data' if ansible_os_family == 'Debian' else 'apache' }}"
+        web_group: "{{ 'www-data' if ansible_os_family == 'Debian' else 'apache' }}"
+
     - name: Create custom index.html
       copy:
         content: |
@@ -55,31 +60,9 @@
           </body>
           </html>
         dest: "{{ document_root }}/index.html"
-        owner: www-data
-        group: www-data
+        owner: "{{ web_user }}"
+        group: "{{ web_group }}"
         mode: '0644'
-      when: ansible_os_family == "Debian"
-
-    - name: Create custom index.html (RedHat/CentOS)
-      copy:
-        content: |
-          <!DOCTYPE html>
-          <html>
-          <head>
-              <title>Ansible Workshop Demo</title>
-          </head>
-          <body>
-              <h1>Welcome to the Ansible Workshop!</h1>
-              <p>This web server was configured using Ansible.</p>
-              <p>Hostname: {{ ansible_hostname }}</p>
-              <p>IP Address: {{ ansible_default_ipv4.address | default('N/A') }}</p>
-          </body>
-          </html>
-        dest: "{{ document_root }}/index.html"
-        owner: apache
-        group: apache
-        mode: '0644'
-      when: ansible_os_family == "RedHat"
 
     - name: Configure firewall for HTTP (RedHat/CentOS)
       firewalld:
