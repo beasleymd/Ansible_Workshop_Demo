@@ -1,0 +1,75 @@
+---
+# Cisco Router Configuration Backup Playbook
+# This playbook backs up the running configuration from all Cisco routers
+
+- name: Backup Cisco C8000V router configurations
+  hosts: routers
+  gather_facts: no
+  
+  vars:
+    backup_timestamp: "{{ lookup('pipe', 'date +%Y-%m-%d_%H%M') }}"
+  
+  tasks:
+    - name: Create backup directory if it doesn't exist
+      file:
+        path: "{{ backup_config_dir }}"
+        state: directory
+        mode: '0755'
+      delegate_to: localhost
+      run_once: true
+      become: no
+    
+    - name: Backup running configuration
+      cisco.ios.ios_config:
+        backup: yes
+        backup_options:
+          filename: "{{ inventory_hostname }}_backup_{{ backup_timestamp }}.txt"
+          dir_path: "{{ backup_config_dir }}"
+      register: backup_result
+    
+    - name: Display backup location
+      debug:
+        msg: "Configuration backed up to: {{ backup_config_dir }}/{{ inventory_hostname }}_backup_{{ backup_timestamp }}.txt"
+    
+    - name: Verify backup file exists
+      stat:
+        path: "{{ backup_config_dir }}/{{ inventory_hostname }}_backup_{{ backup_timestamp }}.txt"
+      register: backup_file
+      delegate_to: localhost
+      become: no
+    
+    - name: Confirm backup success
+      debug:
+        msg: "✓ Backup successful for {{ inventory_hostname }}"
+      when: backup_file.stat.exists
+    
+    - name: Backup failed warning
+      debug:
+        msg: "✗ WARNING: Backup may have failed for {{ inventory_hostname }}"
+      when: not backup_file.stat.exists
+
+- name: Generate backup summary report
+  hosts: localhost
+  gather_facts: no
+  
+  tasks:
+    - name: Create backup summary
+      copy:
+        content: |
+          Cisco Router Configuration Backup Summary
+          =========================================
+          Backup Date: {{ backup_timestamp }}
+          
+          Routers Backed Up:
+          {% for host in groups['routers'] %}
+          - {{ host }}
+          {% endfor %}
+          
+          Backup Location: {{ backup_config_dir }}
+          
+          Files Created:
+          {% for host in groups['routers'] %}
+          - {{ host }}_backup_{{ backup_timestamp }}.txt
+          {% endfor %}
+        dest: "{{ backup_config_dir }}/backup_summary_{{ backup_timestamp }}.txt"
+      become: no

@@ -1,0 +1,102 @@
+---
+# Cisco Router Golden Configuration Deployment Playbook
+# This playbook deploys golden configurations to Cisco routers
+
+- name: Deploy golden configurations to Cisco C8000V routers
+  hosts: routers
+  gather_facts: no
+  
+  vars:
+    backup_before_deploy: true
+    backup_timestamp: "{{ lookup('pipe', 'date +%Y-%m-%d_%H%M') }}"
+  
+  tasks:
+    - name: Backup current configuration before deployment
+      cisco.ios.ios_config:
+        backup: yes
+        backup_options:
+          filename: "{{ inventory_hostname }}_pre_deploy_{{ backup_timestamp }}.txt"
+          dir_path: "{{ backup_config_dir }}"
+      when: backup_before_deploy
+      register: pre_deploy_backup
+    
+    - name: Display pre-deployment backup status
+      debug:
+        msg: "Pre-deployment backup saved: {{ backup_config_dir }}/{{ inventory_hostname }}_pre_deploy_{{ backup_timestamp }}.txt"
+      when: backup_before_deploy
+    
+    - name: Check if golden configuration file exists
+      stat:
+        path: "{{ golden_config_dir }}/{{ inventory_hostname }}_golden_config.txt"
+      register: golden_config_file
+      delegate_to: localhost
+      become: no
+    
+    - name: Fail if golden config doesn't exist
+      fail:
+        msg: "Golden configuration file not found: {{ golden_config_dir }}/{{ inventory_hostname }}_golden_config.txt"
+      when: not golden_config_file.stat.exists
+    
+    - name: Display golden config path
+      debug:
+        msg: "Using golden config: {{ golden_config_dir }}/{{ inventory_hostname }}_golden_config.txt"
+    
+    - name: Deploy golden configuration (merge mode)
+      cisco.ios.ios_config:
+        src: "{{ golden_config_dir }}/{{ inventory_hostname }}_golden_config.txt"
+        save_when: always
+      when: not config_replace
+      register: config_merge_result
+    
+    - name: Deploy golden configuration (replace mode) 
+      cisco.ios.ios_config:
+        src: "{{ golden_config_dir }}/{{ inventory_hostname }}_golden_config.txt"
+        replace: config
+        save_when: always
+      when: config_replace
+      register: config_replace_result
+    
+    - name: Display deployment result
+      debug:
+        msg: "Configuration deployed successfully to {{ inventory_hostname }}"
+      when: config_merge_result.changed or config_replace_result.changed
+    
+    - name: No changes needed
+      debug:
+        msg: "No configuration changes needed for {{ inventory_hostname }}"
+      when: not (config_merge_result.changed or config_replace_result.changed)
+    
+    - name: Verify configuration was saved
+      cisco.ios.ios_command:
+        commands:
+          - show running-config | include hostname
+      register: verify_config
+    
+    - name: Display verification
+      debug:
+        msg: "Verified hostname: {{ verify_config.stdout_lines[0] }}"
+
+- name: Generate deployment summary report
+  hosts: localhost
+  gather_facts: no
+  
+  tasks:
+    - name: Create deployment summary
+      copy:
+        content: |
+          Golden Configuration Deployment Summary
+          ========================================
+          Deployment Date: {{ backup_timestamp }}
+          Deployment Mode: {{ 'REPLACE' if config_replace else 'MERGE' }}
+          
+          Routers Configured:
+          {% for host in groups['routers'] %}
+          - {{ host }}
+          {% endfor %}
+          
+          Golden Config Source: {{ golden_config_dir }}
+          Backup Location: {{ backup_config_dir }}
+          
+          ⚠️  IMPORTANT: Verify router connectivity and functionality after deployment
+        dest: "{{ golden_config_dir }}/deployment_summary_{{ backup_timestamp }}.txt"
+      become: no

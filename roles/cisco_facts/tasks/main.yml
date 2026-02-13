@@ -1,0 +1,78 @@
+---
+# Cisco Facts Role - Main Tasks
+
+- name: Gather all facts from Cisco router
+  cisco.ios.ios_facts:
+    gather_subset: all
+  register: cisco_facts
+
+- name: Display router hostname
+  debug:
+    msg: "Router Hostname: {{ ansible_net_hostname }}"
+  when: show_facts_output | default(true)
+
+- name: Display router model
+  debug:
+    msg: "Model: {{ ansible_net_model }}"
+  when: show_facts_output | default(true)
+
+- name: Display IOS version
+  debug:
+    msg: "IOS Version: {{ ansible_net_version }}"
+  when: show_facts_output | default(true)
+
+- name: Display serial number
+  debug:
+    msg: "Serial Number: {{ ansible_net_serialnum }}"
+  when: show_facts_output | default(true)
+
+- name: Create facts report
+  copy:
+    content: |
+      ================================================================================
+                        Cisco Router Facts Report
+      ================================================================================
+      
+      Router: {{ inventory_hostname }}
+      Generated: {{ ansible_date_time.iso8601 }}
+      
+      HARDWARE INFORMATION
+      --------------------
+      Hostname:          {{ ansible_net_hostname }}
+      Model:             {{ ansible_net_model }}
+      Serial Number:     {{ ansible_net_serialnum }}
+      
+      SOFTWARE INFORMATION
+      --------------------
+      IOS Version:       {{ ansible_net_version }}
+      Image:             {{ ansible_net_image }}
+      
+      INTERFACES
+      ----------
+      {% for interface, details in ansible_net_interfaces.items() %}
+      {{ interface }}:
+        Description:     {{ details.description | default('N/A') }}
+        MAC Address:     {{ details.macaddress | default('N/A') }}
+        MTU:             {{ details.mtu | default('N/A') }}
+        Type:            {{ details.type | default('N/A') }}
+      {% endfor %}
+      
+      NEIGHBORS (if available)
+      ---------
+      {% if ansible_net_neighbors is defined %}
+      {% for neighbor in ansible_net_neighbors %}
+      {{ neighbor }}
+      {% endfor %}
+      {% else %}
+      No neighbor information available
+      {% endif %}
+      
+      ================================================================================
+    dest: "{{ facts_output_dir }}/{{ inventory_hostname }}_facts_{{ ansible_date_time.date }}.txt"
+  delegate_to: localhost
+  become: no
+  when: save_facts_report | default(true)
+
+- name: Facts gathered successfully
+  debug:
+    msg: "✓ Facts gathered successfully for {{ inventory_hostname }}"

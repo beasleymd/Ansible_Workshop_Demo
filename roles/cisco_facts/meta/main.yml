@@ -1,0 +1,22 @@
+---
+# Cisco Facts Role Metadata
+
+galaxy_info:
+  author: Network Automation Team
+  description: Role to gather facts from Cisco routers
+  company: Workshop Demo
+  license: MIT
+  min_ansible_version: "2.9"
+  
+  platforms:
+    - name: IOS
+      versions:
+        - all
+  
+  galaxy_tags:
+    - cisco
+    - networking
+    - facts
+    - information
+
+dependencies: []
