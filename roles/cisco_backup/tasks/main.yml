@@ -1,0 +1,43 @@
+---
+# Cisco Backup Role - Main Tasks
+
+- name: Set backup timestamp
+  set_fact:
+    backup_timestamp: "{{ lookup('pipe', 'date +%Y-%m-%d_%H%M%S') }}"
+  run_once: true
+  delegate_to: localhost
+
+- name: Ensure backup directory exists
+  file:
+    path: "{{ backup_config_dir }}"
+    state: directory
+    mode: '0755'
+  delegate_to: localhost
+  become: no
+
+- name: Backup router configuration
+  cisco.ios.ios_config:
+    backup: yes
+    backup_options:
+      filename: "{{ inventory_hostname }}_backup_{{ backup_timestamp }}.txt"
+      dir_path: "{{ backup_config_dir }}"
+  register: backup_result
+
+- name: Create backup metadata
+  copy:
+    content: |
+      Backup Metadata
+      ===============
+      Router: {{ inventory_hostname }}
+      Timestamp: {{ backup_timestamp }}
+      Backup File: {{ inventory_hostname }}_backup_{{ backup_timestamp }}.txt
+      Backup Location: {{ backup_config_dir }}
+      Backup Method: Ansible ios_config module
+      Executed By: {{ lookup('env', 'USER') }}
+    dest: "{{ backup_config_dir }}/{{ inventory_hostname }}_backup_{{ backup_timestamp }}.meta"
+  delegate_to: localhost
+  become: no
+
+- name: Display backup success message
+  debug:
+    msg: "✓ Configuration backup completed for {{ inventory_hostname }}"

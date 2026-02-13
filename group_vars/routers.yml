@@ -1,0 +1,53 @@
+---
+# Group variables for Cisco routers
+# These variables are specific to the [routers] group
+
+# Connection settings
+ansible_connection: ansible.netcommon.network_cli
+ansible_network_os: cisco.ios.ios
+
+# Authentication (override in host_vars or use Ansible Vault for production)
+# ansible_user: admin
+# ansible_password: "{{ vault_router_password }}"
+# ansible_become_password: "{{ vault_router_enable_password }}"
+
+# Router details
+router_model: "Cisco C8000V"
+router_ios_version: "17.14.01a"
+router_ios_full: "Cisco IOS XE Software, Version 17.14.01a"
+
+# Golden config paths
+golden_config_dir: "{{ playbook_dir }}/../configs/golden_configs"
+backup_config_dir: "{{ playbook_dir }}/../configs/backup_configs"
+
+# Backup settings
+backup_timestamp_format: "%Y-%m-%d_%H%M"
+backup_retain_days: 30
+
+# Configuration deployment settings
+config_replace: false  # Set to true to replace entire config, false for merge
+save_running_config: true
+
+# Timeout settings (in seconds)
+command_timeout: 30
+config_timeout: 60
+
+# Logging
+syslog_server: ""  # Add syslog server IP if needed
+logging_buffered_size: 16384
+
+# NTP servers
+ntp_servers:
+  - 0.pool.ntp.org
+  - 1.pool.ntp.org
+
+# DNS servers
+dns_servers:
+  - 8.8.8.8
+  - 8.8.4.4
+
+# SNMP (if needed)
+snmp_enabled: false
+snmp_community: ""  # Use Ansible Vault in production
+snmp_location: "Data Center"
+snmp_contact: "Network Admin"

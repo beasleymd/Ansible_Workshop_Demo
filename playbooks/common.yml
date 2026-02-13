@@ -1,0 +1,69 @@
+---
+# Common configuration playbook
+# Applies baseline configuration to all hosts
+
+- name: Common configuration for all hosts
+  hosts: all
+  become: true
+  gather_facts: true
+
+  vars:
+    ssh_key_path: "~/.ssh/id_rsa.pub"
+
+  tasks:
+    - name: Update package cache (Debian/Ubuntu)
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+      when: ansible_os_family == "Debian"
+
+    - name: Update package cache (RedHat/CentOS)
+      yum:
+        update_cache: yes
+      when: ansible_os_family == "RedHat"
+
+    - name: Install common packages
+      package:
+        name: "{{ common_packages }}"
+        state: "{{ package_state }}"
+      when: common_packages is defined
+
+    - name: Set timezone
+      timezone:
+        name: "{{ timezone }}"
+      when: timezone is defined
+
+    - name: Ensure system is up to date (Debian/Ubuntu)
+      apt:
+        upgrade: dist
+      when: 
+        - ansible_os_family == "Debian"
+        - auto_updates | default(false)
+
+    - name: Create ansible user
+      user:
+        name: ansible
+        comment: "Ansible Automation User"
+        shell: /bin/bash
+        create_home: yes
+
+    - name: Check if SSH public key exists
+      stat:
+        path: "{{ ssh_key_path | expanduser }}"
+      register: ssh_key_file
+      delegate_to: localhost
+      become: false
+
+    - name: Add SSH key for ansible user
+      authorized_key:
+        user: ansible
+        state: present
+        key: "{{ lookup('file', ssh_key_path) }}"
+      when: ssh_key_file.stat.exists
+
+    - name: Configure sudo for ansible user
+      lineinfile:
+        path: /etc/sudoers.d/ansible
+        line: 'ansible ALL=(ALL) NOPASSWD: ALL'
+        create: yes
+        validate: 'visudo -cf %s'

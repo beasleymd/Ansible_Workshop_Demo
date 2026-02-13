@@ -1,0 +1,11 @@
+---
+# Cisco Backup Role - Default Variables
+
+# Backup directory (relative to playbook or absolute path)
+backup_config_dir: "{{ playbook_dir }}/../configs/backup_configs"
+
+# Backup retention in days
+backup_retention_days: 30
+
+# Backup file prefix
+backup_prefix: "backup"

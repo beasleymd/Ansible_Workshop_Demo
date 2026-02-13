@@ -1,0 +1,7 @@
+---
+# Web server role - Handlers
+
+- name: restart web server
+  service:
+    name: "{{ web_server_service }}"
+    state: restarted

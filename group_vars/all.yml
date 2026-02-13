@@ -1,0 +1,33 @@
+---
+# Global variables for all groups
+# These variables are available to all hosts in the inventory
+
+# Common settings
+ansible_user: ansible
+ansible_become: true
+ansible_become_method: sudo
+
+# Package management
+package_state: present
+
+# Timezone configuration
+timezone: UTC
+
+# NTP settings
+ntp_enabled: true
+
+# Common packages to install on all hosts
+common_packages:
+  - vim
+  - git
+  - htop
+  - curl
+  - wget
+  - net-tools
+  - tree
+
+# Automatic security updates
+auto_updates: false
+
+# Logging
+log_level: INFO

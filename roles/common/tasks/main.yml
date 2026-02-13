@@ -1,0 +1,31 @@
+---
+# Common role - Main tasks file
+
+- name: Include OS-specific variables
+  include_vars: "{{ ansible_os_family }}.yml"
+  when: ansible_os_family in ['Debian', 'RedHat']
+
+- name: Update package cache
+  package:
+    update_cache: yes
+  when: ansible_pkg_mgr in ['apt', 'yum', 'dnf']
+
+- name: Install common packages
+  package:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ common_packages }}"
+
+- name: Set timezone
+  timezone:
+    name: "{{ timezone }}"
+  when: timezone is defined
+
+- name: Configure NTP
+  service:
+    name: "{{ ntp_service }}"
+    state: started
+    enabled: yes
+  when: 
+    - ntp_service is defined
+    - ntp_enabled | default(false)

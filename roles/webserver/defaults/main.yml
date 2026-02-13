@@ -1,0 +1,6 @@
+---
+# Web server role - Default variables
+
+http_port: 80
+https_port: 443
+document_root: /var/www/html

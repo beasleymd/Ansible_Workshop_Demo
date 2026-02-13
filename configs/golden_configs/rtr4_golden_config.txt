@@ -1,0 +1,23 @@
+!
+! Golden Configuration for rtr4
+! Cisco C8000V (VXE) - IOS XE Version 17.14.01a
+! Generated: 02-12-2026
+!
+! This is a placeholder file. Replace with actual golden configuration
+! from: Orig_Golden_Configs_rtr4_02-12-2026.rtf
+!
+! To deploy this configuration:
+! ansible-playbook playbooks/cisco_deploy_golden_config.yml --limit rtr4
+!
+version 17.14
+service timestamps debug datetime msec
+service timestamps log datetime msec
+service call-home
+platform qfp utilization monitor load 80
+platform punt-keepalive disable-kernel-core
+!
+hostname rtr4
+!
+! Add your complete golden configuration here
+!
+end

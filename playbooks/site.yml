@@ -1,0 +1,13 @@
+---
+# Site-wide playbook for Ansible Workshop Demo
+# This is the master playbook that includes all other playbooks
+
+- name: Apply common configuration to all hosts
+  import_playbook: common.yml
+
+- name: Configure web servers
+  import_playbook: webserver.yml
+
+# Uncomment additional playbooks as needed
+# - name: Configure database servers
+#   import_playbook: database.yml

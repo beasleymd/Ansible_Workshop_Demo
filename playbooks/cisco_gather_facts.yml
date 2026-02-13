@@ -1,0 +1,55 @@
+---
+# Cisco Router Facts Gathering Playbook
+# This playbook connects to Cisco routers and gathers system information
+
+- name: Gather facts from Cisco C8000V routers
+  hosts: routers
+  gather_facts: no
+  
+  tasks:
+    - name: Gather router facts
+      cisco.ios.ios_facts:
+        gather_subset:
+          - all
+      register: router_facts
+    
+    - name: Display router hostname
+      debug:
+        msg: "Router: {{ inventory_hostname }} - Hostname: {{ ansible_net_hostname }}"
+    
+    - name: Display IOS version
+      debug:
+        msg: "IOS Version: {{ ansible_net_version }}"
+    
+    - name: Display model and serial number
+      debug:
+        msg: "Model: {{ ansible_net_model }} - Serial: {{ ansible_net_serialnum }}"
+    
+    - name: Display all interfaces
+      debug:
+        msg: "Interfaces: {{ ansible_net_interfaces | list }}"
+    
+    - name: Create facts report
+      copy:
+        content: |
+          Router Facts Report
+          ===================
+          Hostname: {{ ansible_net_hostname }}
+          Model: {{ ansible_net_model }}
+          Serial Number: {{ ansible_net_serialnum }}
+          IOS Version: {{ ansible_net_version }}
+          Image: {{ ansible_net_image }}
+          
+          Interfaces:
+          {% for interface in ansible_net_interfaces.keys() %}
+          - {{ interface }}
+          {% endfor %}
+          
+          Generated: {{ ansible_date_time.iso8601 }}
+        dest: "{{ playbook_dir }}/../configs/{{ inventory_hostname }}_facts.txt"
+      delegate_to: localhost
+      become: no
+    
+    - name: Summary
+      debug:
+        msg: "Facts gathered successfully for {{ inventory_hostname }}"

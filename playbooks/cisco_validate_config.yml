@@ -1,0 +1,125 @@
+---
+# Cisco Router Configuration Validation Playbook
+# This playbook validates running configurations against golden configurations
+
+- name: Validate Cisco C8000V router configurations
+  hosts: routers
+  gather_facts: no
+  
+  vars:
+    validation_timestamp: "{{ lookup('pipe', 'date +%Y-%m-%d_%H%M') }}"
+  
+  tasks:
+    - name: Get current running configuration
+      cisco.ios.ios_command:
+        commands:
+          - show running-config
+      register: running_config
+    
+    - name: Save running config to temp file
+      copy:
+        content: "{{ running_config.stdout[0] }}"
+        dest: "/tmp/{{ inventory_hostname }}_running.txt"
+      delegate_to: localhost
+      become: no
+    
+    - name: Check if golden configuration exists
+      stat:
+        path: "{{ golden_config_dir }}/{{ inventory_hostname }}_golden_config.txt"
+      register: golden_file
+      delegate_to: localhost
+      become: no
+    
+    - name: Read golden configuration
+      slurp:
+        src: "{{ golden_config_dir }}/{{ inventory_hostname }}_golden_config.txt"
+      register: golden_config
+      delegate_to: localhost
+      become: no
+      when: golden_file.stat.exists
+    
+    - name: Compare configurations (basic check)
+      set_fact:
+        config_matches: "{{ running_config.stdout[0] == (golden_config.content | b64decode) }}"
+      when: golden_file.stat.exists
+    
+    - name: Display validation result - MATCH
+      debug:
+        msg: "✓ Configuration matches golden config for {{ inventory_hostname }}"
+      when: golden_file.stat.exists and config_matches
+    
+    - name: Display validation result - MISMATCH
+      debug:
+        msg: "✗ Configuration differs from golden config for {{ inventory_hostname }}"
+      when: golden_file.stat.exists and not config_matches
+    
+    - name: Golden config not found
+      debug:
+        msg: "⚠ Golden configuration not found for {{ inventory_hostname }}"
+      when: not golden_file.stat.exists
+    
+    - name: Create validation report
+      copy:
+        content: |
+          Configuration Validation Report
+          ================================
+          Router: {{ inventory_hostname }}
+          Validation Date: {{ validation_timestamp }}
+          
+          Golden Config Location: {{ golden_config_dir }}/{{ inventory_hostname }}_golden_config.txt
+          Golden Config Exists: {{ golden_file.stat.exists }}
+          
+          {% if golden_file.stat.exists %}
+          Configuration Status: {{ 'MATCH' if config_matches else 'MISMATCH' }}
+          
+          {% if not config_matches %}
+          ⚠️  ATTENTION: Running configuration differs from golden configuration
+          
+          Recommended Actions:
+          1. Review the differences using: diff command
+          2. Update golden config if current config is correct
+          3. Deploy golden config if router config drifted
+          
+          To view differences:
+          diff {{ golden_config_dir }}/{{ inventory_hostname }}_golden_config.txt \
+               /tmp/{{ inventory_hostname }}_running.txt
+          
+          To deploy golden config:
+          ansible-playbook playbooks/cisco_deploy_golden_config.yml --limit {{ inventory_hostname }}
+          {% endif %}
+          {% else %}
+          ⚠️  Golden configuration file not found
+          
+          Action Required:
+          Create golden configuration file at:
+          {{ golden_config_dir }}/{{ inventory_hostname }}_golden_config.txt
+          {% endif %}
+        dest: "{{ playbook_dir }}/../configs/{{ inventory_hostname }}_validation_{{ validation_timestamp }}.txt"
+      delegate_to: localhost
+      become: no
+
+- name: Generate overall validation summary
+  hosts: localhost
+  gather_facts: no
+  
+  tasks:
+    - name: Create validation summary
+      copy:
+        content: |
+          Overall Configuration Validation Summary
+          =========================================
+          Validation Date: {{ validation_timestamp }}
+          
+          Routers Validated:
+          {% for host in groups['routers'] %}
+          - {{ host }}
+          {% endfor %}
+          
+          Validation Reports Location: configs/
+          
+          Next Steps:
+          1. Review individual validation reports for each router
+          2. Address any configuration mismatches
+          3. Update golden configs or deploy as needed
+        dest: "{{ playbook_dir }}/../configs/validation_summary_{{ validation_timestamp }}.txt"
+      become: no

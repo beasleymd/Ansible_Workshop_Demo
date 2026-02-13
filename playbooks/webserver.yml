@@ -1,0 +1,16 @@
+---
+# Web server configuration playbook
+# Deploys and configures a basic web server using the webserver role
+
+- name: Configure web servers
+  hosts: webservers
+  become: true
+  gather_facts: true
+
+  vars:
+    http_port: 80
+    https_port: 443
+    document_root: /var/www/html
+
+  roles:
+    - webserver

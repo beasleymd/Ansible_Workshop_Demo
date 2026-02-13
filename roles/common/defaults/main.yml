@@ -1,0 +1,12 @@
+---
+# Common role - Default variables
+
+common_packages:
+  - vim
+  - git
+  - htop
+  - curl
+  - wget
+  - net-tools
+
+timezone: UTC

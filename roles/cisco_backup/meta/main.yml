@@ -1,0 +1,22 @@
+---
+# Cisco Backup Role Metadata
+
+galaxy_info:
+  author: Network Automation Team
+  description: Role to backup Cisco router configurations
+  company: Workshop Demo
+  license: MIT
+  min_ansible_version: "2.9"
+  
+  platforms:
+    - name: IOS
+      versions:
+        - all
+  
+  galaxy_tags:
+    - cisco
+    - networking
+    - backup
+    - configuration
+
+dependencies: []
